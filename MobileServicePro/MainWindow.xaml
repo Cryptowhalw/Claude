@@ -1,0 +1,104 @@
+<Window x:Class="MobileServicePro.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Mobile Service Pro — 0.2" Height="720" Width="1120"
+        MinHeight="560" MinWidth="880" Background="#101827" Foreground="#E9EFF7">
+  <Window.Resources>
+    <Style TargetType="Button">
+      <Setter Property="Padding" Value="15,9"/>
+      <Setter Property="Margin" Value="0,0,10,0"/>
+      <Setter Property="Foreground" Value="White"/>
+      <Setter Property="Background" Value="#29384D"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+    <Style TargetType="DataGrid">
+      <Setter Property="AutoGenerateColumns" Value="False"/>
+      <Setter Property="IsReadOnly" Value="True"/>
+      <Setter Property="Background" Value="#1A2637"/>
+      <Setter Property="Foreground" Value="#E9EFF7"/>
+      <Setter Property="RowBackground" Value="#1A2637"/>
+      <Setter Property="AlternatingRowBackground" Value="#253449"/>
+      <Setter Property="HeadersVisibility" Value="Column"/>
+      <Setter Property="BorderThickness" Value="0"/>
+      <Setter Property="GridLinesVisibility" Value="None"/>
+      <Setter Property="SelectionMode" Value="Single"/>
+    </Style>
+  </Window.Resources>
+
+  <Grid Margin="20">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="180"/>
+    </Grid.RowDefinitions>
+
+    <StackPanel Grid.Row="0" Margin="0,0,0,18">
+      <TextBlock Text="Mobile Service Pro" FontSize="28" FontWeight="Bold"/>
+      <TextBlock Text="Сервисная диагностика Android • ADB / Fastboot • версия 0.2" Foreground="#9BAEC7" FontSize="13"/>
+    </StackPanel>
+
+    <WrapPanel Grid.Row="1" Margin="0,0,0,14">
+      <Button x:Name="RefreshUsbButton" Content="Обновить USB" Click="RefreshUsb_Click" Background="#3178D4"/>
+      <Button x:Name="AndroidButton" Content="Диагностика Android" Click="Android_Click" Background="#3178D4"/>
+      <Button x:Name="FastbootButton" Content="Обновить Fastboot" Click="Fastboot_Click"/>
+      <Button Content="Проверить ADB / Fastboot" Click="CheckTools_Click"/>
+      <Button Content="Экспорт отчёта" Click="Export_Click"/>
+      <Button Content="Apple" Click="Apple_Click"/>
+    </WrapPanel>
+
+    <TabControl Grid.Row="2" Background="#1A2637" BorderThickness="0" Margin="0,0,0,14">
+      <TabItem Header="USB-устройства">
+        <DataGrid x:Name="DeviceGrid">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Название" Binding="{Binding Name}" Width="2*"/>
+            <DataGridTextColumn Header="Производитель" Binding="{Binding Vendor}" Width="*"/>
+            <DataGridTextColumn Header="VID / PID" Binding="{Binding HardwareId}" Width="2*"/>
+            <DataGridTextColumn Header="Состояние" Binding="{Binding Status}" Width="*"/>
+          </DataGrid.Columns>
+        </DataGrid>
+      </TabItem>
+
+      <TabItem Header="Android (ADB)">
+        <DataGrid x:Name="AndroidGrid">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Модель" Binding="{Binding Title}" Width="1.6*"/>
+            <DataGridTextColumn Header="Android" Binding="{Binding AndroidVersion}" Width="0.7*"/>
+            <DataGridTextColumn Header="API" Binding="{Binding ApiLevel}" Width="0.5*"/>
+            <DataGridTextColumn Header="Чипсет" Binding="{Binding Chipset}" Width="*"/>
+            <DataGridTextColumn Header="ОЗУ, МБ" Binding="{Binding TotalRamMb}" Width="0.7*"/>
+            <DataGridTextColumn Header="Батарея, %" Binding="{Binding BatteryLevel}" Width="0.7*"/>
+            <DataGridTextColumn Header="t°C" Binding="{Binding BatteryTempC}" Width="0.5*"/>
+            <DataGridTextColumn Header="Bootloader" Binding="{Binding BootloaderState}" Width="*"/>
+            <DataGridTextColumn Header="Патч" Binding="{Binding SecurityPatch}" Width="*"/>
+            <DataGridTextColumn Header="Serial" Binding="{Binding Serial}" Width="*"/>
+            <DataGridTextColumn Header="Состояние" Binding="{Binding State}" Width="*"/>
+          </DataGrid.Columns>
+        </DataGrid>
+      </TabItem>
+
+      <TabItem Header="Fastboot">
+        <DataGrid x:Name="FastbootGrid">
+          <DataGrid.Columns>
+            <DataGridTextColumn Header="Продукт" Binding="{Binding Title}" Width="1.5*"/>
+            <DataGridTextColumn Header="Разблокирован" Binding="{Binding UnlockedState}" Width="*"/>
+            <DataGridTextColumn Header="OEM unlock разрешён" Binding="{Binding UnlockAbility}" Width="*"/>
+            <DataGridTextColumn Header="Слот" Binding="{Binding CurrentSlot}" Width="0.6*"/>
+            <DataGridTextColumn Header="Bootloader" Binding="{Binding BootloaderVersion}" Width="*"/>
+            <DataGridTextColumn Header="Baseband" Binding="{Binding BasebandVersion}" Width="*"/>
+            <DataGridTextColumn Header="Serial" Binding="{Binding Serial}" Width="*"/>
+          </DataGrid.Columns>
+        </DataGrid>
+      </TabItem>
+    </TabControl>
+
+    <Border Grid.Row="3" Background="#1A2637" CornerRadius="10" Padding="12">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Text="Журнал" FontWeight="SemiBold" FontSize="15" Margin="0,0,0,8"/>
+        <TextBox x:Name="LogBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                 Background="#101827" Foreground="#C4D5E9" BorderThickness="0" FontFamily="Consolas" FontSize="12"/>
+      </DockPanel>
+    </Border>
+  </Grid>
+</Window>
