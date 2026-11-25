@@ -1,0 +1,12 @@
+# .NET build output
+bin/
+obj/
+*.user
+.vs/
+
+# Build artifacts (published exe, installer)
+artifacts/
+
+# Android SDK Platform-Tools are downloaded, not committed
+MobileServicePro/tools/platform-tools/*
+!MobileServicePro/tools/platform-tools/README.md

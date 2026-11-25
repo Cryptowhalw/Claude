@@ -1,12 +1,52 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <AssemblyName>MobileServicePro</AssemblyName>
-    <Version>0.2.0</Version>
     <LangVersion>latest</LangVersion>
+    <AssemblyName>MobileServicePro</AssemblyName>
+    <RootNamespace>MobileServicePro</RootNamespace>
+
+    <!-- Позволяет собирать проект и на Linux/macOS (например, в CI). На Windows ни на что не влияет. -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+
+    <!-- Сведения о продукте (Свойства файла → Подробно) -->
+    <Version>0.3.0</Version>
+    <Product>Mobile Service Pro</Product>
+    <AssemblyTitle>Mobile Service Pro</AssemblyTitle>
+    <Description>Сервисная диагностика Android-устройств (ADB / Fastboot)</Description>
+    <Company>Mobile Service Pro</Company>
+    <Copyright>© 2026 Mobile Service Pro</Copyright>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+
+    <!-- Не тащить в сборку переводы WPF на десяток языков -->
+    <SatelliteResourceLanguages>ru;en</SatelliteResourceLanguages>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Иконка окна (заголовок и панель задач) -->
+    <None Remove="Assets\app.ico" />
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Если положить официальные Android SDK Platform-Tools в tools\platform-tools,
+      они будут скопированы рядом с программой (и в сборку, и в установщик).
+      Отдельными файлами, а не внутрь .exe: adb должен лежать на диске, чтобы запускаться.
+    -->
+    <None Remove="tools\**" />
+    <None Include="tools\platform-tools\**\*"
+          Exclude="tools\platform-tools\README.md"
+          CopyToOutputDirectory="PreserveNewest"
+          CopyToPublishDirectory="PreserveNewest"
+          ExcludeFromSingleFile="true" />
+  </ItemGroup>
+
 </Project>

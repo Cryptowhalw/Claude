@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Text.Json;
@@ -16,14 +17,20 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Title = $"{AppInfo.Name} — {AppInfo.Version}";
+        SubtitleText.Text = $"Сервисная диагностика Android • ADB / Fastboot • версия {AppInfo.Version}";
+
         Log("Программа запущена. Подключите телефон и выберите действие.");
         Log("ADB-диагностика требует включённой «Отладки по USB» и подтверждения на телефоне.");
+        if (ProcessRunner.Resolve("adb") == "adb" && !PlatformToolsInstaller.IsInstalled)
+            Log("adb рядом с программой не найден. Если его нет и в PATH — нажмите «Скачать Platform-Tools».");
     }
 
     private void Log(string message)
     {
         LogBox.AppendText($"[{DateTime.Now:HH:mm:ss}] {message}{Environment.NewLine}");
         LogBox.ScrollToEnd();
+        AppLog.Write(message);
     }
 
     private async void RefreshUsb_Click(object sender, RoutedEventArgs e)
@@ -85,7 +92,48 @@ public partial class MainWindow : Window
     {
         Log(await ToolChecker.CheckAdbAsync());
         Log(await ToolChecker.CheckFastbootAsync());
-        Log("Если инструменты не найдены — положите официальные Android SDK Platform-Tools в папку tools\\platform-tools рядом с программой или добавьте в PATH.");
+        Log("Если инструменты не найдены — нажмите «Скачать Platform-Tools» (официальный архив Google).");
+    }
+
+    private async void PlatformTools_Click(object sender, RoutedEventArgs e)
+    {
+        var answer = MessageBox.Show(
+            "Будут загружены официальные Android SDK Platform-Tools (adb, fastboot) " +
+            "с сервера Google (dl.google.com), около 8–10 МБ.\n\n" +
+            "Используя их, вы принимаете условия лицензии Android SDK от Google.\n\n" +
+            $"Папка установки:\n{PlatformToolsInstaller.InstallDirectory}\n\nПродолжить?",
+            "Скачать Platform-Tools", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        if (answer != MessageBoxResult.Yes) return;
+
+        PlatformToolsButton.IsEnabled = false;
+        Log("Загрузка Platform-Tools с dl.google.com...");
+        var lastStep = -1;
+        var progress = new Progress<double>(p =>
+        {
+            var step = (int)(p * 10);
+            if (step == lastStep) return;
+            lastStep = step;
+            Log($"  загружено {step * 10}%");
+        });
+        try
+        {
+            var dir = await PlatformToolsInstaller.InstallAsync(progress);
+            Log($"Platform-Tools установлены: {dir}");
+            Log(await ToolChecker.CheckAdbAsync());
+            Log(await ToolChecker.CheckFastbootAsync());
+        }
+        catch (Exception ex) { Log($"Ошибка загрузки Platform-Tools: {ex.Message}"); }
+        finally { PlatformToolsButton.IsEnabled = true; }
+    }
+
+    private void OpenLogs_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Directory.CreateDirectory(AppLog.LogDirectory);
+            Process.Start(new ProcessStartInfo("explorer.exe", AppLog.LogDirectory) { UseShellExecute = true });
+        }
+        catch (Exception ex) { Log($"Не удалось открыть папку логов: {ex.Message}"); }
     }
 
     private void Export_Click(object sender, RoutedEventArgs e)

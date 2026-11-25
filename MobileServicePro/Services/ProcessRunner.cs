@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 
@@ -11,22 +12,26 @@ public sealed record ProcessResult(int ExitCode, string StdOut, string StdErr)
 
 /// <summary>
 /// Запуск внешних инструментов (adb, fastboot) с тайм-аутом, без окна консоли.
-/// Инструменты ищутся сначала рядом с программой (папка tools\platform-tools),
-/// затем в PATH. Так программу можно поставлять вместе с официальными
-/// Android SDK Platform-Tools, не требуя ручной настройки PATH у мастера.
+/// Порядок поиска:
+///   1) tools\platform-tools рядом с программой (если положены при сборке);
+///   2) %LOCALAPPDATA%\MobileServicePro\platform-tools (скачаны кнопкой в программе);
+///   3) PATH.
 /// </summary>
 public static class ProcessRunner
 {
     /// <summary>Полный путь к исполняемому файлу или имя для поиска в PATH.</summary>
     public static string Resolve(string executable)
     {
-        var exeName = OperatingSystem.IsWindows() ? executable + ".exe" : executable;
+        if (Path.IsPathRooted(executable)) return executable;
 
+        var exeName = OperatingSystem.IsWindows() ? executable + ".exe" : executable;
         var baseDir = AppContext.BaseDirectory;
+
         string[] candidates =
         [
             Path.Combine(baseDir, "tools", "platform-tools", exeName),
             Path.Combine(baseDir, "platform-tools", exeName),
+            Path.Combine(PlatformToolsInstaller.InstallDirectory, exeName),
             Path.Combine(baseDir, exeName),
         ];
         foreach (var c in candidates)
@@ -41,6 +46,7 @@ public static class ProcessRunner
         int timeoutSeconds = 20,
         CancellationToken cancellationToken = default)
     {
+        var argList = args.ToArray();
         var info = new ProcessStartInfo(Resolve(executable))
         {
             RedirectStandardOutput = true,
@@ -50,9 +56,22 @@ public static class ProcessRunner
             StandardOutputEncoding = System.Text.Encoding.UTF8,
             StandardErrorEncoding = System.Text.Encoding.UTF8,
         };
-        foreach (var a in args) info.ArgumentList.Add(a);
+        foreach (var a in argList) info.ArgumentList.Add(a);
 
-        using var process = Process.Start(info)
+        Process? started;
+        try
+        {
+            started = Process.Start(info);
+        }
+        catch (Win32Exception ex) when (ex.NativeErrorCode == 2) // ERROR_FILE_NOT_FOUND
+        {
+            throw new FileNotFoundException(
+                $"«{Path.GetFileName(executable)}» не найден. Нажмите «Скачать Platform-Tools» " +
+                "или положите adb/fastboot в папку tools\\platform-tools рядом с программой.",
+                executable, ex);
+        }
+
+        using var process = started
             ?? throw new InvalidOperationException($"Не удалось запустить «{executable}».");
 
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -67,7 +86,9 @@ public static class ProcessRunner
         catch (OperationCanceledException)
         {
             try { process.Kill(entireProcessTree: true); } catch { /* уже завершён */ }
-            throw new TimeoutException($"«{executable} {string.Join(' ', args)}» превысил {timeoutSeconds} с.");
+            if (cancellationToken.IsCancellationRequested) throw;
+            throw new TimeoutException(
+                $"«{Path.GetFileName(executable)} {string.Join(' ', argList)}» не ответил за {timeoutSeconds} с.");
         }
 
         return new ProcessResult(process.ExitCode, (await outTask).Trim(), (await errTask).Trim());
